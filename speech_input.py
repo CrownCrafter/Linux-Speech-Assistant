@@ -9,6 +9,9 @@ import speech_recognition
 import pyttsx3
 import re
 import subprocess
+import wikipedia
+# Default Applications
+def_terminal = 'alacritty'
 # Speech Recognizer
 rec = speech_recognition.Recognizer()
 
@@ -17,46 +20,56 @@ def ttsbot(text):
     output = gTTS(text,slow=False)
     output.save("last_said.mp3")
     playsound('last_said.mp3') 
-def wikiscrape(url):
-    
-    page = requests.get(url)
-    soup = bs(page.content,'html.parser')
-    text = soup.find_all('p')[0]
-    text = str(text)
-    text = text.split('. ')[0]
-    text = re.sub(r'\[[0-9]*\]',' ',text)
-    # Print string after removing tags
-    return re.compile(r'<[^>]+>').sub('', text)
-ttsbot("What would you like to search for")
-while True:
+def wikiscrape(query):
     try:
-        with speech_recognition.Microphone() as mic:
-            rec.adjust_for_ambient_noise(mic, duration=1)
-            print("Listening")
-            audio=rec.listen(mic)
-            query=rec.recognize_google(audio)
-            print(query)
+        text = wikipedia.search(query)[0]
+        text = wikipedia.summary(text)
+        text = text.split('. ')[0]
+    except:
+        text = wikipedia.suggest(query)
+        text = wikipedia.summary(text)
+        text = text.split('. ')[0]
+    return text
+
+t = input("Text or Speech")
+if t == 'speech':
+    ttsbot("What would you like to search for")
+while True:
+    if t == 'speech':
+        try:
+            with speech_recognition.Microphone() as mic:
+                rec.adjust_for_ambient_noise(mic, duration=1)
+                print("Listening")
+                audio=rec.listen(mic)
+                query=rec.recognize_google(audio)
+                print(query)
             
-    except speech_recognition.UnknownValueError():
-        continue
-    if query.startswith('search'):
+        except speech_recognition.UnknownValueError():
+            continue
+    else:
+        query = input("Enter query: ")
+    if query.lower().startswith('search'):
         query = query.split()
         query = ' '.join(query[1:])
-        print(query)
-        s = wikiscrape('https://en.wikipedia.org/w/index.php?go=Go&search='+query)
+        text = wikiscrape(query)
+        print(text)
+        if t == 'speech':
+            ttsbot(text)
+        #print(wikipedia.summary(query))
+        #s = ttsbot(wikipedia.summary(query))
 
-        print(s)
-        try:
-            ttsbot(s)
-        except:
-            print("No text found")
         
     elif 'weather' in query.lower():
         # TODO IMPLEMENT
         ttsbot("Getting weather info")
     elif 'open' in query.lower():
         m = query.lower()
-        subprocess.run([m.split()[1]], shell=False)
+        if m.split()[1] == 'browser':
+            webbrowser.open('https://www.google.com')
+        elif m.split()[1] == 'terminal':
+            subprocess.run(def_terminal)
+        else:
+            subprocess.run([m.split()[1]], shell=False)
     elif 'run' in query.lower().split()[0]:
         m = query.lower()
         m = m.lstrip('run')
@@ -67,6 +80,7 @@ while True:
     else:
         for j in search(query, tld="co.in", num=1, stop=1, pause=2):
             if j.startswith('https'):
-                ttsbot("Opening Webpage") 
+                if t == 'speech':
+                    ttsbot("Opening Webpage") 
                 webbrowser.open(j)
                 break        
