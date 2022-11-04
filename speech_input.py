@@ -1,20 +1,19 @@
+#!/usr/bin/env python3
 from gtts import gTTS
 import os
 from playsound import playsound
 import webbrowser
-from bs4 import BeautifulSoup as bs
 import requests
 from googlesearch import search
 import speech_recognition
 import pyttsx3
-import re
+import sys
 import subprocess
 import wikipedia
 # Default Applications
 def_terminal = 'alacritty'
 # Speech Recognizer
 rec = speech_recognition.Recognizer()
-
 # Definitions
 def ttsbot(text):
     output = gTTS(text,slow=False)
@@ -31,11 +30,10 @@ def wikiscrape(query):
         text = text.split('. ')[0]
     return text
 
-t = input("Text or Speech")
-if t == 'speech':
+if '--text' not in sys.argv:
     ttsbot("What would you like to search for")
 while True:
-    if t == 'speech':
+    if '--text' not in sys.argv:
         try:
             with speech_recognition.Microphone() as mic:
                 rec.adjust_for_ambient_noise(mic, duration=1)
@@ -53,16 +51,19 @@ while True:
         query = ' '.join(query[1:])
         text = wikiscrape(query)
         print(text)
-        if t == 'speech':
+        if '--text' not in sys.argv:
             ttsbot(text)
         #print(wikipedia.summary(query))
         #s = ttsbot(wikipedia.summary(query))
 
-        
+    #elif query.lower().startswith('watch'):
+    #    query = query.split()
+    #    query = ''.join(query[1:])
+    #    webbrowser.open('https://www.youtube.com/c/'+query)
     elif 'weather' in query.lower():
         # TODO IMPLEMENT
         ttsbot("Getting weather info")
-    elif 'open' in query.lower():
+    elif query.lower().startswith('open'):
         m = query.lower()
         if m.split()[1] == 'browser':
             webbrowser.open('https://www.google.com')
@@ -80,7 +81,7 @@ while True:
     else:
         for j in search(query, tld="co.in", num=1, stop=1, pause=2):
             if j.startswith('https'):
-                if t == 'speech':
+                if 'text' not in sys.argv:
                     ttsbot("Opening Webpage") 
                 webbrowser.open(j)
                 break        
