@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from gtts import gTTS
 import os
 from playsound import playsound
@@ -10,11 +11,23 @@ import pyttsx3
 import sys
 import subprocess
 import wikipedia
+# TODO Get Distro Base name
+op_sys = 'arch'
 # Default Applications
 def_terminal = 'alacritty'
+def_folder = '~/Documents/Dovah/'
 # Speech Recognizer
 rec = speech_recognition.Recognizer()
+rec.dynamic_energy_threshold = False
+rec.energy_threshold = 400
 # Definitions
+def window():
+    app = QApplication(sys.argv)
+    win = QMainWindow()
+    win.setGeometry(0, 0, 200, 200)
+    win.setWindowTitle("Dovah")
+    win.show()
+    sys.exit(app.exec())
 def ttsbot(text):
     output = gTTS(text,slow=False)
     output.save("last_said.mp3")
@@ -29,7 +42,6 @@ def wikiscrape(query):
         text = wikipedia.summary(text)
         text = text.split('. ')[0]
     return text
-
 if '--text' not in sys.argv:
     ttsbot("What would you like to search for")
 while True:
@@ -38,7 +50,7 @@ while True:
             with speech_recognition.Microphone() as mic:
                 rec.adjust_for_ambient_noise(mic, duration=1)
                 print("Listening")
-                audio=rec.listen(mic)
+                audio=rec.listen(mic, timeout= 3)
                 query=rec.recognize_google(audio)
                 print(query)
             
@@ -70,18 +82,30 @@ while True:
         elif m.split()[1] == 'terminal':
             subprocess.run(def_terminal)
         else:
-            subprocess.run([m.split()[1]], shell=False)
+            subprocess.run(['xdg-open', '/home/ayushm/Documents/Dovah/goals.docx'], shell=False)
+            #subprocess.run([m.split()[1]], shell=False)
     elif 'run' in query.lower().split()[0]:
         m = query.lower()
         m = m.lstrip('run')
         m = m.lstrip()
         m = m.split()
         m = ''.join(m)
+        if m == 'update':
+            if op_sys == 'arch':
+                subprocess.run('xterm -e sudo pacman -Syu')
+            elif op_sys == 'debian' or op_sys == 'ubuntu':
+                subprocess.run('xterm -e sudo apt update && sudo apt upgrade')
+
+
         subprocess.run([m], shell=True)
+    elif query.lower().startswith('exit'):
+        if '--text' not in sys.argv:
+            ttsbot("Exiting")
+        break
     else:
         for j in search(query, tld="co.in", num=1, stop=1, pause=2):
             if j.startswith('https'):
-                if 'text' not in sys.argv:
+                if '--text' not in sys.argv:
                     ttsbot("Opening Webpage") 
                 webbrowser.open(j)
-                break        
+                break
